@@ -743,6 +743,12 @@ public class UIManager : MonoBehaviour
       if (AutoSpinPopup.activeSelf) AutoSpinPopup.SetActive(false);
       if (LBPopup_Object.activeSelf) LBPopup_Object.SetActive(false);
     }
+    if (popup == ExitPopup_Object)
+    {
+      if (RulesPopup.activeSelf) RulesPopup.SetActive(false);
+      if (AutoSpinPopup.activeSelf) AutoSpinPopup.SetActive(false);
+      if (LBPopup_Object.activeSelf) LBPopup_Object.SetActive(false);
+    }
     if (PopupMain_Object) PopupMain_Object.SetActive(isActive);
     if (popup) popup.SetActive(isActive);
   }
