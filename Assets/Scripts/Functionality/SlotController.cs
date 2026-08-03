@@ -112,6 +112,17 @@ public class SlotController : MonoBehaviour
     }
   }
 
+  // Backend-pushed balance correction — snap the display (no tween) and re-run the low-balance gate,
+  // since an external push can move the player across the "can spin" threshold outside any spin flow.
+  internal void UpdateBalanceDisplay(double newBalance)
+  {
+    if (uiController) uiController.UpdateBalance(newBalance);
+    if (uiController && !uiController.CheckBalance(CurrentBet))
+    {
+      if (uiController) uiController.EnableLowBalance();
+    }
+  }
+
   #region AutoSpin
   internal void AutoSpin(int count)
   {

@@ -199,6 +199,20 @@ public class UIManager : MonoBehaviour
   private bool SkipWin;
   private bool isExit = false;
 
+  private void Awake()
+  {
+    if (socketManager != null && socketManager.JSManager != null)
+      socketManager.JSManager.RegisterVisibilityListener(gameObject.name);
+  }
+
+  public void OnFocusChanged(string value)
+  {
+    bool focused = value == "1";
+    Debug.Log("UNITY FOCUS CHANGED: " + value + " (focused: " + focused + ")");
+    if (audioController) audioController.SetMuteAll(!focused);
+    if (socketManager) socketManager.HandleFocusChange(focused);
+  }
+
   private void Start()
   {
     isAtOpen = false;

@@ -12,6 +12,15 @@ public class AudioController : MonoBehaviour
     [SerializeField] internal AudioSource audioSpin_button;
     [SerializeField] private AudioClip[] clips;
 
+    private List<AudioSource> allSources;
+    private readonly Dictionary<AudioSource, bool> preFocusMuteState = new Dictionary<AudioSource, bool>();
+    private bool isForceMuted = false;
+
+    private void Awake()
+    {
+        allSources = new List<AudioSource> { bg_adudio, audioPlayer_wl, audioPlayer_button, audioSpin_button };
+    }
+
     private void Start()
     {
         if (bg_adudio) bg_adudio.Play();
@@ -68,26 +77,64 @@ public class AudioController : MonoBehaviour
         bg_adudio.Stop();
     }
 
+    // User-toggle-driven — the sound/mute button. An explicit user interaction proves the game
+    // currently has real focus, so it clears any stale forced-mute and always wins immediately.
     internal void ToggleMute(bool toggle, string type="all")
     {
+        isForceMuted = false;
         switch (type)
         {
             case "bg":
-                bg_adudio.mute = toggle;
+                ApplyUserMute(bg_adudio, toggle);
                 break;
             case "button":
-                audioPlayer_button.mute=toggle;
-                audioSpin_button.mute=toggle;
+                ApplyUserMute(audioPlayer_button, toggle);
+                ApplyUserMute(audioSpin_button, toggle);
                 break;
             case "wl":
-                audioPlayer_wl.mute=toggle;
+                ApplyUserMute(audioPlayer_wl, toggle);
                 break;
             case "all":
-                audioPlayer_wl.mute = toggle;
-                bg_adudio.mute = toggle;
-                audioPlayer_button.mute = toggle;
-                audioSpin_button.mute = toggle;
+                ApplyUserMute(audioPlayer_wl, toggle);
+                ApplyUserMute(bg_adudio, toggle);
+                ApplyUserMute(audioPlayer_button, toggle);
+                ApplyUserMute(audioSpin_button, toggle);
                 break;
         }
+    }
+
+    private void ApplyUserMute(AudioSource source, bool mute)
+    {
+        if (source == null) return;
+        source.mute = mute;
+        preFocusMuteState[source] = mute;
+    }
+
+    // Focus-driven — called from BOTH OnFocusChanged (JS bridge) and OnApplicationFocus below.
+    // Never force-unmutes: on regaining focus each source returns to the user's last chosen state.
+    internal void SetMuteAll(bool forceMute)
+    {
+        if (forceMute == isForceMuted || allSources == null) return;
+        isForceMuted = forceMute;
+
+        foreach (var source in allSources)
+        {
+            if (source == null) continue;
+            if (forceMute)
+            {
+                preFocusMuteState[source] = source.mute;
+                source.mute = true;
+            }
+            else
+            {
+                source.mute = preFocusMuteState.TryGetValue(source, out bool prevMuted) ? prevMuted : source.mute;
+            }
+        }
+    }
+
+    // Native/editor focus path — calls the SAME method the WebGL OnFocusChanged path calls.
+    private void OnApplicationFocus(bool focus)
+    {
+        SetMuteAll(!focus);
     }
 }
